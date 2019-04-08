@@ -1,0 +1,24 @@
+sudo: false
+language: julia
+os:
+  - linux
+  - osx
+osx_image: xcode8
+julia:
+  - 0.6
+addons:
+  apt:
+    packages:
+    - hdf5-tools
+  homebrew:
+    packages:
+    - hdf5
+notifications:
+  email: false
+script:
+  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  - julia -e 'Pkg.init(); Pkg.clone(pwd());'
+  - julia -e 'Pkg.build("Mocha"); Pkg.test("Mocha", coverage=true)'
+  - MOCHA_USE_NATIVE_EXT=true julia -e 'Pkg.build("Mocha"); Pkg.test("Mocha", coverage=true)'
+after_success:
+  - julia -e 'cd(Pkg.dir("Mocha")); Pkg.add("Coverage"); include(joinpath(Pkg.dir("Mocha"), "tools/coverage-hack.jl")); Coveralls.submit(process_folder("src",["cuda"]))'
